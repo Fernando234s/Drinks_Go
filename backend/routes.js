@@ -3,6 +3,68 @@ const db = require('./db');
 
 const router = express.Router();
 
+function formatPedidos(rows) {
+  const pedidosMap = new Map();
+
+  for (const row of rows) {
+    if (!pedidosMap.has(row.pedido_id)) {
+      pedidosMap.set(row.pedido_id, {
+        id: row.pedido_id,
+        cliente_nome: row.cliente_nome,
+        status: row.status_descricao,
+        data_pedido: row.data_pedido,
+        bebidas: [],
+      });
+    }
+
+    if (row.bebida_id) {
+      pedidosMap.get(row.pedido_id).bebidas.push({
+        id: row.bebida_id,
+        nome: row.bebida_nome,
+        quantidade: row.quantidade,
+      });
+    }
+  }
+
+  return Array.from(pedidosMap.values());
+}
+
+async function getPedidoById(conn, pedidoId) {
+  const [rows] = await conn.query(
+    `SELECT
+      p.id AS pedido_id,
+      c.nome AS cliente_nome,
+      s.descricao AS status_descricao,
+      p.data_pedido,
+      b.id AS bebida_id,
+      b.nome AS bebida_nome,
+      pb.quantidade
+    FROM pedidos p
+    LEFT JOIN clientes c ON c.id = p.cliente_id
+    LEFT JOIN status s ON s.id = p.status_id
+    LEFT JOIN pedido_bebidas pb ON pb.pedido_id = p.id
+    LEFT JOIN bebidas b ON b.id = pb.bebida_id
+    WHERE p.id = ?
+    ORDER BY pb.id ASC`,
+    [pedidoId]
+  );
+
+  const pedidos = formatPedidos(rows);
+  return pedidos[0] || null;
+}
+
+function extractPedidoItems(body) {
+  if (Array.isArray(body.itens)) {
+    return body.itens;
+  }
+
+  if (Array.isArray(body.bebidas)) {
+    return body.bebidas;
+  }
+
+  return null;
+}
+
 router.get('/clientes', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM clientes ORDER BY id DESC');
@@ -71,17 +133,20 @@ router.post('/bebidas', async (req, res) => {
 });
 
 router.post('/pedidos', async (req, res) => {
-  const conn = await db.getConnection();
+  let conn;
+  let transactionStarted = false;
 
   try {
-    const { cliente_id, status_id, itens } = req.body;
+    conn = await db.getConnection();
+    const { cliente_id, status_id } = req.body;
+    const itens = extractPedidoItems(req.body);
 
     if (!cliente_id || !status_id || !Array.isArray(itens) || itens.length === 0) {
-      conn.release();
-      return res.status(400).json({ erro: 'cliente_id, status_id e itens sao obrigatorios' });
+      return res.status(400).json({ erro: 'cliente_id, status_id e itens (ou bebidas) sao obrigatorios' });
     }
 
     await conn.beginTransaction();
+    transactionStarted = true;
 
     const [pedidoResult] = await conn.query(
       'INSERT INTO pedidos (cliente_id, status_id, data_pedido) VALUES (?, ?, NOW())',
@@ -101,18 +166,25 @@ router.post('/pedidos', async (req, res) => {
       );
     }
 
-    await conn.commit();
-    conn.release();
+    const pedidoCriado = await getPedidoById(conn, pedidoId);
 
-    res.status(201).json({ mensagem: 'Pedido criado com sucesso', pedido_id: pedidoId });
+    await conn.commit();
+    transactionStarted = false;
+
+    res.status(201).json(pedidoCriado);
   } catch (error) {
-    try {
-      await conn.rollback();
-    } catch (_) {
-      // ignore rollback error
+    if (conn && transactionStarted) {
+      try {
+        await conn.rollback();
+      } catch (_) {
+        // ignore rollback error
+      }
     }
-    conn.release();
     res.status(500).json({ erro: 'Erro ao criar pedido', detalhes: error.message });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
   }
 });
 
@@ -122,41 +194,20 @@ router.get('/pedidos', async (req, res) => {
       `SELECT
         p.id AS pedido_id,
         c.nome AS cliente_nome,
-        p.status_id,
+        s.descricao AS status_descricao,
         p.data_pedido,
         b.id AS bebida_id,
         b.nome AS bebida_nome,
         pb.quantidade
       FROM pedidos p
-      INNER JOIN clientes c ON c.id = p.cliente_id
+      LEFT JOIN clientes c ON c.id = p.cliente_id
+      LEFT JOIN status s ON s.id = p.status_id
       LEFT JOIN pedido_bebidas pb ON pb.pedido_id = p.id
       LEFT JOIN bebidas b ON b.id = pb.bebida_id
-      ORDER BY p.id DESC`
+      ORDER BY p.id DESC, pb.id ASC`
     );
 
-    const pedidosMap = new Map();
-
-    for (const row of rows) {
-      if (!pedidosMap.has(row.pedido_id)) {
-        pedidosMap.set(row.pedido_id, {
-          id: row.pedido_id,
-          cliente: row.cliente_nome,
-          status: row.status_id,
-          data: row.data_pedido,
-          bebidas: [],
-        });
-      }
-
-      if (row.bebida_id) {
-        pedidosMap.get(row.pedido_id).bebidas.push({
-          id: row.bebida_id,
-          nome: row.bebida_nome,
-          quantidade: row.quantidade,
-        });
-      }
-    }
-
-    res.json(Array.from(pedidosMap.values()));
+    res.json(formatPedidos(rows));
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao buscar pedidos', detalhes: error.message });
   }
@@ -184,33 +235,39 @@ router.put('/pedidos/:id/status', async (req, res) => {
 });
 
 router.delete('/pedidos/:id', async (req, res) => {
-  const conn = await db.getConnection();
+  let conn;
+  let transactionStarted = false;
 
   try {
+    conn = await db.getConnection();
     const { id } = req.params;
 
     await conn.beginTransaction();
+    transactionStarted = true;
     await conn.query('DELETE FROM pedido_bebidas WHERE pedido_id = ?', [id]);
     const [result] = await conn.query('DELETE FROM pedidos WHERE id = ?', [id]);
 
     if (result.affectedRows === 0) {
       await conn.rollback();
-      conn.release();
       return res.status(404).json({ erro: 'Pedido nao encontrado' });
     }
 
     await conn.commit();
-    conn.release();
-
+    transactionStarted = false;
     res.json({ mensagem: 'Pedido removido com sucesso' });
   } catch (error) {
-    try {
-      await conn.rollback();
-    } catch (_) {
-      // ignore rollback error
+    if (conn && transactionStarted) {
+      try {
+        await conn.rollback();
+      } catch (_) {
+        // ignore rollback error
+      }
     }
-    conn.release();
     res.status(500).json({ erro: 'Erro ao remover pedido', detalhes: error.message });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
   }
 });
 
