@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drink_Go | Carrinho</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="topbar">
+      <a href="produtos.html" class="brand">Drink_Go</a>
+      <div class="nav-links">
+        <a href="produtos.html">Inicio</a>
+        <a href="produtos.html">Produtos</a>
+        <a href="carrinho.html" class="active">Carrinho</a>
+        <a href="pedidos.html">Pedidos</a>
+      </div>
+      <a href="carrinho.html" class="cart-pill">Carrinho <span id="cart-count">0</span></a>
+    </nav>
+
+    <main class="page page-split">
+      <section class="panel">
+        <div class="panel-header">
+          <h1>Carrinho</h1>
+        </div>
+        <div id="cart-items" class="stack"></div>
+        <div class="summary-row">
+          <span>Total</span>
+          <strong id="cart-total">R$ 0,00</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h1>Cliente</h1>
+        </div>
+
+        <div class="field-group">
+          <label for="cliente-select">Cliente</label>
+          <select id="cliente-select">
+            <option value="">Selecione</option>
+          </select>
+        </div>
+
+        <form id="cliente-form" class="stack">
+          <div class="field-group">
+            <label for="cliente-nome">Nome</label>
+            <input id="cliente-nome" name="nome" type="text" required>
+          </div>
+          <div class="field-group">
+            <label for="cliente-telefone">Telefone</label>
+            <input id="cliente-telefone" name="telefone" type="text" required>
+          </div>
+          <div class="field-group">
+            <label for="cliente-endereco">Endereco</label>
+            <input id="cliente-endereco" name="endereco" type="text" required>
+          </div>
+          <button class="button secondary" type="submit">Cadastrar cliente</button>
+        </form>
+
+        <div class="field-group">
+          <label for="status-id">Status</label>
+          <select id="status-id">
+            <option value="1">Pendente</option>
+            <option value="2">Em preparo</option>
+            <option value="3">Saiu para entrega</option>
+            <option value="4">Finalizado</option>
+          </select>
+        </div>
+
+        <button id="finish-order" class="button primary" type="button">Finalizar pedido</button>
+        <div id="cart-feedback" class="feedback"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/carrinho.js"></script>
+</body>
+</html>

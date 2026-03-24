@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Bebidas | Drink_Go</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body data-page="produtos">
+    <header class="topbar">
+      <div class="container topbar-content">
+        <a class="brand" href="produtos.html" aria-label="Painel Drink_Go">
+          <span class="brand-mark" aria-hidden="true">DG</span>
+          <span class="brand-text">
+            <span class="brand-title">Drink_Go</span>
+            <span class="brand-subtitle">Painel administrativo</span>
+          </span>
+        </a>
+
+        <nav class="menu" aria-label="Navegacao principal">
+          <a class="nav-link active" href="produtos.html">Bebidas</a>
+          <a class="nav-link" href="pedidos.html">Pedidos</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container page-section">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h1>Painel de bebidas</h1>
+            <p>Cadastro, edicao e exclusao de bebidas.</p>
+          </div>
+        </div>
+
+        <form id="form-bebida" class="admin-form">
+          <input type="hidden" id="bebida-id" />
+          <div class="form-grid">
+            <label>
+              <span>Nome</span>
+              <input type="text" id="nome" placeholder="Nome da bebida" required />
+            </label>
+            <label>
+              <span>Categoria</span>
+              <input type="text" id="categoria" placeholder="Categoria" />
+            </label>
+            <label>
+              <span>Preco</span>
+              <input type="number" id="preco" placeholder="0,00" min="0" step="0.01" required />
+            </label>
+            <label>
+              <span>Estoque</span>
+              <input type="number" id="estoque" placeholder="0" min="0" step="1" required />
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button class="button primary" type="submit" id="botao-salvar">Salvar</button>
+            <button class="button secondary hidden" type="button" id="botao-cancelar">Cancelar edicao</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header panel-header-inline">
+          <div>
+            <h2>Lista de bebidas</h2>
+            <p>Itens cadastrados na API.</p>
+          </div>
+          <button class="button secondary" type="button" id="botao-recarregar">Recarregar</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th>Preco</th>
+                <th>Estoque</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="lista-produtos"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/produtos.js"></script>
+  </body>
+</html>

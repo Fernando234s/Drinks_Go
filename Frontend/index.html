@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drink_Go</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-mark" aria-hidden="true">DG</span>
+          <div>
+            <strong class="brand-name">Drink_Go</strong>
+          </div>
+        </div>
+
+        <button class="cart-toggle" id="cartToggle" type="button" aria-label="Abrir carrinho">
+          <span class="cart-toggle__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="presentation">
+              <path
+                d="M6.4 6h14.1l-1.4 5.7a2 2 0 0 1-1.94 1.53H9.15A2 2 0 0 1 7.2 11.7L5.02 4H2"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+              />
+              <circle cx="10" cy="19" r="1.5" fill="currentColor" />
+              <circle cx="18" cy="19" r="1.5" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="cart-toggle__label">Carrinho</span>
+          <span class="cart-count" id="cartCount">0</span>
+        </button>
+      </header>
+
+      <main class="page">
+        <section class="hero-panel">
+          <div>
+            <p class="hero-panel__eyebrow">Entrega rapida</p>
+            <h1>Bebidas geladas com checkout direto.</h1>
+          </div>
+          <div class="hero-panel__meta">
+            <div class="hero-stat">
+              <span>Itens</span>
+              <strong id="productCount">0</strong>
+            </div>
+            <div class="hero-stat">
+              <span>Categorias</span>
+              <strong id="categoryCount">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="filters" id="filters"></section>
+
+        <section class="catalog-section">
+          <div class="catalog-grid" id="productGrid"></div>
+          <div class="catalog-empty hidden" id="catalogEmpty">
+            <strong>Nenhuma bebida encontrada.</strong>
+            <span>Tente outra categoria.</span>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="cart-backdrop hidden" id="cartBackdrop"></div>
+
+    <aside class="cart-sidebar" id="cartSidebar" aria-label="Carrinho de compras">
+      <div class="cart-sidebar__header">
+        <div>
+          <p class="section-kicker">Seu pedido</p>
+          <h2>Carrinho</h2>
+        </div>
+        <button class="icon-button" id="closeCart" type="button" aria-label="Fechar carrinho">
+          <span aria-hidden="true">x</span>
+        </button>
+      </div>
+
+      <div class="cart-items" id="cartItems"></div>
+
+      <div class="cart-summary">
+        <div class="cart-summary__row">
+          <span>Total</span>
+          <strong id="cartTotal">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <form class="checkout-form" id="checkoutForm">
+        <p class="section-kicker">Finalizacao</p>
+        <label>
+          <span>Nome</span>
+          <input id="customerName" name="nome" type="text" placeholder="Seu nome" required />
+        </label>
+        <label>
+          <span>Telefone</span>
+          <input id="customerPhone" name="telefone" type="tel" placeholder="(00) 00000-0000" required />
+        </label>
+        <label>
+          <span>Endereco</span>
+          <textarea id="customerAddress" name="endereco" rows="3" placeholder="Rua, numero, complemento" required></textarea>
+        </label>
+
+        <button class="primary-button checkout-button" id="checkoutButton" type="submit">
+          Finalizar Pedido
+        </button>
+      </form>
+    </aside>
+
+    <template id="productCardTemplate">
+      <article class="product-card">
+        <div class="product-card__image-wrap">
+          <img class="product-card__image" alt="" />
+          <span class="product-card__badge"></span>
+        </div>
+        <div class="product-card__content">
+          <div class="product-card__head">
+            <span class="product-card__category"></span>
+            <h3 class="product-card__title"></h3>
+          </div>
+          <div class="product-card__footer">
+            <strong class="product-card__price"></strong>
+            <button class="primary-button product-card__button" type="button">Adicionar</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <template id="cartItemTemplate">
+      <article class="cart-item">
+        <div class="cart-item__info">
+          <strong class="cart-item__name"></strong>
+          <span class="cart-item__price"></span>
+        </div>
+        <div class="cart-item__actions">
+          <div class="qty-stepper">
+            <button class="qty-stepper__button" data-action="decrease" type="button">-</button>
+            <span class="qty-stepper__value"></span>
+            <button class="qty-stepper__button" data-action="increase" type="button">+</button>
+          </div>
+          <button class="text-button" data-action="remove" type="button">Remover</button>
+        </div>
+      </article>
+    </template>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="./js/app.js"></script>
+  </body>
+</html>
