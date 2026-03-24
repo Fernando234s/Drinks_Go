@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin | Drink_Go</title>
+    <link rel="stylesheet" href="css/style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+  <body data-page="admin" data-auth="admin">
+    <header class="topbar topbar-admin">
+      <div class="container topbar-content">
+        <a class="brand" href="admin.html" aria-label="Painel admin">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3h10v2h-1v5.4a5.5 5.5 0 0 1-3.4 5.08V19h3v2H8.4v-2h3v-3.52A5.5 5.5 0 0 1 8 10.4V5H7V3Zm3 2v5.4a3.5 3.5 0 1 0 7 0V5h-7Z" /></svg>
+          </span>
+          <span class="brand-title">Drink_Go Admin</span>
+        </a>
+
+        <div class="topbar-right">
+          <nav class="menu" aria-label="Navegacao admin">
+            <button class="nav-link active" type="button" data-admin-nav="dashboard">Dashboard</button>
+            <button class="nav-link" type="button" data-admin-nav="bebidas">Bebidas</button>
+            <button class="nav-link" type="button" data-admin-nav="clientes">Clientes</button>
+          </nav>
+
+          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">
+            <span>Dark</span>
+          </button>
+
+          <button class="button button-ghost" type="button" data-logout-admin>Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container page-shell admin-page">
+      <section class="admin-stats">
+        <article class="stat-card">
+          <span>Produtos</span>
+          <strong id="stat-produtos">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Clientes</span>
+          <strong id="stat-clientes">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Pedidos</span>
+          <strong id="stat-pedidos">0</strong>
+        </article>
+      </section>
+
+      <section class="admin-panel" data-admin-section="dashboard">
+        <div class="section-header">
+          <h1 class="section-heading">Painel de Pedidos</h1>
+          <select id="filtro-status-admin" class="admin-filter">
+            <option value="todos">Todos</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Em preparo">Em preparo</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Entregue">Entregue</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div id="feedback-pedidos" class="feedback hidden"></div>
+        <section id="lista-pedidos-admin" class="orders-list"></section>
+      </section>
+
+      <section class="admin-grid">
+        <section class="admin-panel hidden" data-admin-section="bebidas">
+          <div class="section-header">
+            <h1 class="section-heading">Bebidas</h1>
+            <button id="nova-bebida" class="button button-primary" type="button">+ Nova bebida</button>
+          </div>
+          <div id="feedback-produtos" class="feedback hidden"></div>
+          <div class="table-shell">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Categoria</th>
+                  <th>Preco</th>
+                  <th>Estoque</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="lista-produtos-admin"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="admin-panel hidden" data-admin-section="clientes">
+          <div class="section-header">
+            <h2 class="section-heading">Clientes</h2>
+            <button id="novo-cliente" class="button button-primary" type="button">+ Novo cliente</button>
+          </div>
+          <div id="feedback-clientes" class="feedback hidden"></div>
+          <div class="table-shell">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Telefone</th>
+                  <th>Endereco</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="lista-clientes-admin"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div class="modal" id="modal-bebida" aria-hidden="true">
+      <div class="modal-card">
+        <h2 class="modal-title" id="modal-bebida-titulo">Nova bebida</h2>
+        <form id="form-bebida" class="modal-form" novalidate>
+          <input type="hidden" id="bebida-id" />
+          <label class="field-label" for="bebida-nome">Nome</label>
+          <input type="text" id="bebida-nome" placeholder="Nome" />
+          <label class="field-label" for="bebida-categoria">Categoria</label>
+          <input type="text" id="bebida-categoria" placeholder="Categoria" />
+          <label class="field-label" for="bebida-preco">Preco</label>
+          <input type="number" id="bebida-preco" step="0.01" min="0" placeholder="0.00" />
+          <label class="field-label" for="bebida-estoque">Estoque</label>
+          <input type="number" id="bebida-estoque" min="0" placeholder="0" />
+          <label class="field-label" for="bebida-imagem-url">Imagem URL</label>
+          <input type="url" id="bebida-imagem-url" placeholder="https://..." />
+          <div class="modal-actions">
+            <button class="button button-ghost" type="button" data-modal-close-parent="modal-bebida">Cancelar</button>
+            <button class="button button-primary" type="submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-cliente" aria-hidden="true">
+      <div class="modal-card">
+        <h2 class="modal-title" id="modal-cliente-titulo">Novo cliente</h2>
+        <form id="form-cliente-crud" class="modal-form" novalidate>
+          <input type="hidden" id="cliente-crud-id" />
+          <label class="field-label" for="cliente-crud-nome">Nome</label>
+          <input type="text" id="cliente-crud-nome" placeholder="Nome" />
+          <label class="field-label" for="cliente-crud-telefone">Telefone</label>
+          <input type="text" id="cliente-crud-telefone" placeholder="Telefone" />
+          <label class="field-label" for="cliente-crud-endereco">Endereco</label>
+          <input type="text" id="cliente-crud-endereco" placeholder="Endereco" />
+          <div class="modal-actions">
+            <button class="button button-ghost" type="button" data-modal-close-parent="modal-cliente">Cancelar</button>
+            <button class="button button-primary" type="submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-pedido-admin" aria-hidden="true">
+      <div class="modal-card">
+        <h2 class="modal-title">Detalhe do pedido</h2>
+        <div id="pedido-admin-detalhe" class="pedido-admin-detalhe"></div>
+        <div class="modal-actions">
+          <button class="button button-ghost" type="button" data-modal-close-parent="modal-pedido-admin">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/produtos.js"></script>
+    <script src="js/clientes.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/pedidos-admin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

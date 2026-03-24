@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Admin | Drink_Go</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body data-page="admin-login" data-auth="guest-admin">
+    <main class="auth-shell auth-shell-admin">
+      <section class="auth-card auth-card-admin">
+        <div class="brand auth-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3h10v2h-1v5.4a5.5 5.5 0 0 1-3.4 5.08V19h3v2H8.4v-2h3v-3.52A5.5 5.5 0 0 1 8 10.4V5H7V3Zm3 2v5.4a3.5 3.5 0 1 0 7 0V5h-7Z" /></svg>
+          </span>
+          <span class="brand-title">Drink_Go Admin</span>
+        </div>
+
+        <form id="admin-login-form" class="modal-form" novalidate>
+          <label class="field-label" for="admin-login">Login</label>
+          <input type="text" id="admin-login" placeholder="adm" />
+          <label class="field-label" for="admin-senha">Senha</label>
+          <input type="password" id="admin-senha" placeholder="admin" />
+          <button class="button button-primary full-width" type="submit">Entrar</button>
+          <div id="admin-login-feedback" class="feedback hidden"></div>
+        </form>
+      </section>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
