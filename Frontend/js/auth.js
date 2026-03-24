@@ -14,8 +14,9 @@ function isAdminLogged() {
 }
 
 function redirectTo(path) {
-  if (!location.pathname.endsWith(path)) {
-    location.href = path;
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (location.pathname !== normalized) {
+    location.href = normalized;
   }
 }
 
@@ -103,7 +104,7 @@ function inicializarLogout() {
   document.querySelectorAll("[data-logout-admin]").forEach((botao) => {
     botao.addEventListener("click", () => {
       localStorage.removeItem(ADMIN_STORAGE_KEY);
-      redirectTo("admin-login.html");
+      window.location.href = "/admin-login.html";
     });
   });
 }
