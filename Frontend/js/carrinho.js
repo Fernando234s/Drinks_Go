@@ -1,124 +1,275 @@
-const cartItemsContainer = document.getElementById('cart-items');
-const cartTotalElement = document.getElementById('cart-total');
-const clienteSelect = document.getElementById('cliente-select');
-const clienteForm = document.getElementById('cliente-form');
-const finishOrderButton = document.getElementById('finish-order');
-const cartFeedback = document.getElementById('cart-feedback');
-const statusSelect = document.getElementById('status-id');
+const listaCarrinho = document.getElementById("lista-carrinho");
+const valorTotal = document.getElementById("valor-total");
+const clienteSelect = document.getElementById("cliente-select");
+const formCliente = document.getElementById("form-cliente");
+const inputClienteNome = document.getElementById("cliente-nome");
+const inputClienteTelefone = document.getElementById("cliente-telefone");
+const inputClienteEndereco = document.getElementById("cliente-endereco");
+const botaoFinalizar = document.getElementById("finalizar-pedido");
+const feedbackCarrinho = document.getElementById("feedback-carrinho");
+const resumoItens = document.getElementById("resumo-itens");
+const resumoTipos = document.getElementById("resumo-tipos");
+let clientesSalvos = [];
+let ultimoClienteCriadoId = null;
 
-function updateItemQuantity(productId, delta) {
-  const cart = getCart()
-    .map((item) => item.id === productId ? { ...item, quantidade: item.quantidade + delta } : item)
-    .filter((item) => item.quantidade > 0);
+function mostrarFeedbackCarrinho(message, isError = false) {
+  feedbackCarrinho.textContent = message;
+  feedbackCarrinho.classList.remove("hidden", "error");
 
-  saveCart(cart);
-  renderCart();
+  if (isError) {
+    feedbackCarrinho.classList.add("error");
+  }
 }
 
-function renderCart() {
-  const cart = getCart();
+function calcularTotal(carrinho) {
+  return carrinho.reduce(
+    (acc, item) => acc + Number(item.preco || 0) * Number(item.quantidade || 0),
+    0
+  );
+}
 
-  if (!cart.length) {
-    cartItemsContainer.innerHTML = '<div class="empty-state">Carrinho vazio.</div>';
-    cartTotalElement.textContent = money(0);
+function renderizarResumo(carrinho) {
+  const totalItens = carrinho.reduce(
+    (acc, item) => acc + Number(item.quantidade || 0),
+    0
+  );
+  const totalCategorias = new Set(
+    carrinho.map((item) => obterCategoriaNormalizada(item.categoria))
+  ).size;
+
+  resumoItens.textContent = `${totalItens} itens`;
+  resumoTipos.textContent = `${totalCategorias} categorias`;
+  valorTotal.textContent = formatarMoeda(calcularTotal(carrinho));
+}
+
+function ajustarQuantidade(itemId, delta) {
+  const item = lerCarrinho().find((produto) => produto.id === itemId);
+
+  if (!item) {
     return;
   }
 
-  cartItemsContainer.innerHTML = cart.map((item) => `
-    <article class="cart-item">
-      <div>
-        <div class="product-name">${item.nome}</div>
-        <div class="product-meta">${money(item.preco)}</div>
-      </div>
-      <div class="qty-box">
-        <button class="qty-button" type="button" data-qty="${item.id}" data-delta="-1">-</button>
-        <strong>${item.quantidade}</strong>
-        <button class="qty-button" type="button" data-qty="${item.id}" data-delta="1">+</button>
-      </div>
-    </article>
-  `).join('');
+  atualizarQuantidadeCarrinho(itemId, Number(item.quantidade || 0) + delta, {
+    source: "carrinho",
+  });
+  renderizarCarrinho();
+}
 
-  const total = cart.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
-  cartTotalElement.textContent = money(total);
+function criarItemCarrinho(item) {
+  const article = document.createElement("article");
+  const marca = obterMarcaFicticia(item);
+  const subtotal = Number(item.preco || 0) * Number(item.quantidade || 0);
 
-  document.querySelectorAll('[data-qty]').forEach((button) => {
-    button.addEventListener('click', () => {
-      updateItemQuantity(Number(button.dataset.qty), Number(button.dataset.delta));
+  article.className = "cart-item fade-up";
+  article.innerHTML = `
+    <div class="cart-thumb">
+      <img src="${obterImagemBebida(item)}" alt="${item.nome}" loading="lazy" />
+    </div>
+
+    <div class="cart-copy">
+      <div class="cart-item-main">
+        <div>
+          <strong>${item.nome}</strong>
+          <p class="muted-text">${marca} · ${obterCategoriaNormalizada(item.categoria)}</p>
+        </div>
+        <span class="pill">${formatarMoeda(item.preco)}</span>
+      </div>
+
+      <p class="muted-text">${obterDescricaoBebida(item)}</p>
+
+      <div class="cart-item-actions">
+        <div class="quantity-stepper" aria-label="Controle de quantidade">
+          <button class="stepper-btn" type="button" data-step="-1">-</button>
+          <span class="stepper-value">${item.quantidade}</span>
+          <button class="stepper-btn" type="button" data-step="1">+</button>
+        </div>
+        <strong class="cart-subtotal">${formatarMoeda(subtotal)}</strong>
+      </div>
+    </div>
+  `;
+
+  article.querySelectorAll("[data-step]").forEach((button) => {
+    button.addEventListener("click", () => {
+      ajustarQuantidade(item.id, Number(button.dataset.step));
     });
   });
+
+  return article;
 }
 
-async function loadClientes(selectedId = '') {
+function renderizarCarrinho() {
+  const carrinho = lerCarrinho();
+
+  if (!carrinho.length) {
+    listaCarrinho.innerHTML = criarEmptyState(
+      "Seu carrinho esta vazio",
+      "Adicione bebidas no catalogo para montar um novo pedido."
+    );
+    renderizarResumo([]);
+    return;
+  }
+
+  listaCarrinho.innerHTML = "";
+  carrinho.forEach((item) => {
+    listaCarrinho.appendChild(criarItemCarrinho(item));
+  });
+
+  renderizarResumo(carrinho);
+}
+
+function normalizarCliente(cliente) {
+  if (!cliente || typeof cliente !== "object") {
+    return null;
+  }
+
+  return cliente.data && typeof cliente.data === "object" ? cliente.data : cliente;
+}
+
+function obterNomeCliente(cliente) {
+  return cliente?.nome || cliente?.cliente || `Cliente ${cliente?.id ?? ""}`.trim();
+}
+
+function preencherCamposCliente(cliente) {
+  inputClienteNome.value = cliente?.nome || "";
+  inputClienteTelefone.value = cliente?.telefone || "";
+  inputClienteEndereco.value = cliente?.endereco || "";
+}
+
+function limparCamposCliente() {
+  inputClienteNome.value = "";
+  inputClienteTelefone.value = "";
+  inputClienteEndereco.value = "";
+}
+
+function preencherSelectClientes(selectedId = "") {
+  const clienteSelecionadoId = String(selectedId || "");
+
+  if (!clientesSalvos.length) {
+    clienteSelect.innerHTML =
+      '<option value="">Nenhum cliente cadastrado</option>';
+    return;
+  }
+
+  const opcoes = clientesSalvos.map((cliente) => {
+    const nome = obterNomeCliente(cliente);
+    const telefone = cliente.telefone ? ` - ${cliente.telefone}` : "";
+    const selected =
+      clienteSelecionadoId && String(cliente.id) === clienteSelecionadoId ? "selected" : "";
+
+    return `<option value="${cliente.id}" ${selected}>${nome}${telefone}</option>`;
+  });
+
+  clienteSelect.innerHTML = [
+    '<option value="">Selecione um cliente</option>',
+    ...opcoes,
+  ].join("");
+}
+
+function selecionarCliente() {
+  const clienteId = String(clienteSelect.value || "");
+
+  if (!clienteId) {
+    limparCamposCliente();
+    return;
+  }
+
+  const cliente = clientesSalvos.find((item) => String(item.id) === clienteId);
+  if (!cliente) {
+    return;
+  }
+
+  preencherCamposCliente(cliente);
+  ultimoClienteCriadoId = Number(cliente.id) || ultimoClienteCriadoId;
+}
+
+async function carregarClientes(selectedId) {
   try {
-    const clientes = await apiFetch('/clientes');
-    clienteSelect.innerHTML = '<option value="">Selecione</option>' + clientes.map((cliente) => (
-      `<option value="${cliente.id}" ${String(selectedId) === String(cliente.id) ? 'selected' : ''}>${cliente.nome}</option>`
-    )).join('');
+    clientesSalvos = normalizarLista(await api.listarClientes()).filter(Boolean);
+    preencherSelectClientes(selectedId);
   } catch (error) {
-    setFeedback(cartFeedback, error.message, 'error');
+    clientesSalvos = [];
+    clienteSelect.innerHTML = '<option value="">Erro ao carregar clientes</option>';
+    mostrarFeedbackCarrinho(error.message, true);
   }
 }
 
-clienteForm.addEventListener('submit', async (event) => {
+async function salvarCliente() {
+  const nome = inputClienteNome.value.trim();
+  const telefone = inputClienteTelefone.value.trim();
+  const endereco = inputClienteEndereco.value.trim();
+
+  if (!nome || !telefone || !endereco) {
+    mostrarFeedbackCarrinho("Preencha nome, telefone e endereco do cliente.", true);
+    return;
+  }
+
+  try {
+    const clienteCriado = normalizarCliente(
+      await api.criarCliente({ nome, telefone, endereco })
+    );
+
+    ultimoClienteCriadoId = Number(clienteCriado?.id) || ultimoClienteCriadoId;
+    limparCamposCliente();
+    clienteSelect.value = "";
+    await carregarClientes();
+    mostrarFeedbackCarrinho("Cliente salvo com sucesso");
+  } catch (error) {
+    mostrarFeedbackCarrinho(error.message, true);
+  }
+}
+
+formCliente.addEventListener("submit", async (event) => {
   event.preventDefault();
-  setFeedback(cartFeedback, '');
-
-  const formData = new FormData(clienteForm);
-  const payload = {
-    nome: formData.get('nome'),
-    telefone: formData.get('telefone'),
-    endereco: formData.get('endereco'),
-  };
-
-  try {
-    const cliente = await apiFetch('/clientes', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-
-    clienteForm.reset();
-    await loadClientes(cliente.id);
-    setFeedback(cartFeedback, 'Cliente cadastrado.', 'success');
-  } catch (error) {
-    setFeedback(cartFeedback, error.message, 'error');
-  }
+  await salvarCliente();
 });
 
-finishOrderButton.addEventListener('click', async () => {
-  const cart = getCart();
+clienteSelect.addEventListener("change", selecionarCliente);
 
-  if (!cart.length) {
-    setFeedback(cartFeedback, 'Carrinho vazio.', 'error');
+botaoFinalizar.addEventListener("click", async () => {
+  const carrinho = lerCarrinho();
+  const clienteId = Number(clienteSelect.value) || Number(ultimoClienteCriadoId);
+  const clienteSelecionado = clientesSalvos.find((cliente) => Number(cliente.id) === clienteId);
+  const nomeCliente = obterNomeCliente(clienteSelecionado) || "Cliente selecionado";
+
+  if (!carrinho.length) {
+    mostrarFeedbackCarrinho("Adicione itens ao carrinho antes de finalizar.", true);
     return;
   }
 
-  if (!clienteSelect.value) {
-    setFeedback(cartFeedback, 'Selecione um cliente.', 'error');
+  if (!clienteId) {
+    mostrarFeedbackCarrinho("Selecione um cliente para criar o pedido.", true);
     return;
   }
 
   const payload = {
-    cliente_id: Number(clienteSelect.value),
-    status_id: Number(statusSelect.value),
-    itens: cart.map((item) => ({
+    cliente_id: clienteId,
+    status_id: 1,
+    itens: carrinho.map((item) => ({
       bebida_id: item.id,
       quantidade: item.quantidade,
     })),
   };
 
   try {
-    await apiFetch('/pedidos', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    await api.criarPedido(payload);
+
+    abrirModalPedido({
+      cliente: nomeCliente,
+      itens: carrinho.reduce((acc, item) => acc + Number(item.quantidade || 0), 0),
+      total: formatarMoeda(calcularTotal(carrinho)),
     });
 
-    saveCart([]);
-    renderCart();
-    setFeedback(cartFeedback, 'Pedido enviado.', 'success');
+    limparCarrinho({ source: "carrinho" });
+    renderizarCarrinho();
+    mostrarFeedbackCarrinho("Pedido enviado com sucesso.");
   } catch (error) {
-    setFeedback(cartFeedback, error.message, 'error');
+    mostrarFeedbackCarrinho(error.message, true);
   }
 });
 
-renderCart();
-loadClientes();
+window.addEventListener("cart:updated", () => {
+  renderizarCarrinho();
+});
+
+renderizarCarrinho();
+carregarClientes();

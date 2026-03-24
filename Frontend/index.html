@@ -4,155 +4,105 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Drink_Go</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="css/style.css" />
   </head>
-  <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <div class="brand-block">
-          <span class="brand-mark" aria-hidden="true">DG</span>
-          <div>
-            <strong class="brand-name">Drink_Go</strong>
-          </div>
-        </div>
-
-        <button class="cart-toggle" id="cartToggle" type="button" aria-label="Abrir carrinho">
-          <span class="cart-toggle__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation">
-              <path
-                d="M6.4 6h14.1l-1.4 5.7a2 2 0 0 1-1.94 1.53H9.15A2 2 0 0 1 7.2 11.7L5.02 4H2"
-                fill="none"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.8"
-              />
-              <circle cx="10" cy="19" r="1.5" fill="currentColor" />
-              <circle cx="18" cy="19" r="1.5" fill="currentColor" />
-            </svg>
+  <body data-page="cliente" data-auth="user">
+    <header class="topbar">
+      <div class="container topbar-content">
+        <a class="brand" href="index.html" aria-label="Drink_Go">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3h10v2h-1v5.4a5.5 5.5 0 0 1-3.4 5.08V19h3v2H8.4v-2h3v-3.52A5.5 5.5 0 0 1 8 10.4V5H7V3Zm3 2v5.4a3.5 3.5 0 1 0 7 0V5h-7Z" /></svg>
           </span>
-          <span class="cart-toggle__label">Carrinho</span>
-          <span class="cart-count" id="cartCount">0</span>
-        </button>
-      </header>
+          <span class="brand-title">Drink_Go</span>
+        </a>
 
-      <main class="page">
-        <section class="hero-panel">
-          <div>
-            <p class="hero-panel__eyebrow">Entrega rapida</p>
-            <h1>Bebidas geladas com checkout direto.</h1>
+        <div class="topbar-right">
+          <nav class="menu" aria-label="Navegacao principal">
+            <a class="nav-link active" href="index.html">Produtos</a>
+          </nav>
+
+          <div class="user-chip">
+            <span data-user-name>Usuario</span>
+            <button class="button button-ghost" type="button" data-logout-user>Sair</button>
           </div>
-          <div class="hero-panel__meta">
-            <div class="hero-stat">
-              <span>Itens</span>
-              <strong id="productCount">0</strong>
-            </div>
-            <div class="hero-stat">
-              <span>Categorias</span>
-              <strong id="categoryCount">0</strong>
-            </div>
+
+          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">
+            <span>Dark</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container page-shell">
+      <section class="app-layout">
+        <section class="catalog-shell">
+          <div class="section-header">
+            <h1 class="section-heading">Produtos</h1>
+            <span class="pill-label" id="catalogo-count">0 itens</span>
           </div>
+
+          <div id="feedback-produtos" class="feedback hidden"></div>
+          <section id="lista-produtos" class="products-grid"></section>
         </section>
 
-        <section class="filters" id="filters"></section>
+        <aside class="cart-panel">
+          <section class="cart-card">
+            <div class="cart-headline">
+              <h2 class="section-heading">Carrinho</h2>
+              <span class="cart-badge-strong" id="resumo-itens">0 itens</span>
+            </div>
 
-        <section class="catalog-section">
-          <div class="catalog-grid" id="productGrid"></div>
-          <div class="catalog-empty hidden" id="catalogEmpty">
-            <strong>Nenhuma bebida encontrada.</strong>
-            <span>Tente outra categoria.</span>
-          </div>
-        </section>
-      </main>
+            <div class="summary-grid">
+              <article class="summary-box"><span>Itens</span><strong id="resumo-itens-total">0</strong></article>
+              <article class="summary-box"><span>Categorias</span><strong id="resumo-tipos">0</strong></article>
+            </div>
+
+            <div id="feedback-carrinho" class="feedback hidden"></div>
+            <div id="lista-carrinho" class="cart-items"></div>
+
+            <form id="form-cliente" class="client-form" novalidate>
+              <label class="field-label" for="cliente-nome">Nome</label>
+              <input type="text" id="cliente-nome" placeholder="Nome" />
+
+              <label class="field-label" for="cliente-telefone">Telefone</label>
+              <input type="text" id="cliente-telefone" placeholder="Telefone" />
+
+              <label class="field-label" for="cliente-endereco">Endereco</label>
+              <input type="text" id="cliente-endereco" placeholder="Endereco" />
+
+              <button class="button button-soft full-width" type="submit">Salvar cliente</button>
+            </form>
+
+            <div>
+              <label class="field-label" for="cliente-select">Clientes salvos</label>
+              <select id="cliente-select">
+                <option value="">Cliente salvo</option>
+              </select>
+            </div>
+
+            <div class="checkout-total">
+              <span>Total</span>
+              <strong id="valor-total">R$ 0,00</strong>
+            </div>
+
+            <button id="finalizar-pedido" class="button button-primary full-width" type="button">Finalizar pedido</button>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <div class="modal" id="modal-confirmacao-pedido" aria-hidden="true">
+      <div class="modal-card">
+        <h2 class="modal-title">Pedido</h2>
+        <p class="modal-text" id="modal-pedido-texto">Pedido enviado</p>
+        <div class="modal-summary" id="modal-pedido-resumo"></div>
+        <div class="modal-actions">
+          <button class="button button-ghost" type="button" data-modal-close>Fechar</button>
+        </div>
+      </div>
     </div>
-
-    <div class="cart-backdrop hidden" id="cartBackdrop"></div>
-
-    <aside class="cart-sidebar" id="cartSidebar" aria-label="Carrinho de compras">
-      <div class="cart-sidebar__header">
-        <div>
-          <p class="section-kicker">Seu pedido</p>
-          <h2>Carrinho</h2>
-        </div>
-        <button class="icon-button" id="closeCart" type="button" aria-label="Fechar carrinho">
-          <span aria-hidden="true">x</span>
-        </button>
-      </div>
-
-      <div class="cart-items" id="cartItems"></div>
-
-      <div class="cart-summary">
-        <div class="cart-summary__row">
-          <span>Total</span>
-          <strong id="cartTotal">R$ 0,00</strong>
-        </div>
-      </div>
-
-      <form class="checkout-form" id="checkoutForm">
-        <p class="section-kicker">Finalizacao</p>
-        <label>
-          <span>Nome</span>
-          <input id="customerName" name="nome" type="text" placeholder="Seu nome" required />
-        </label>
-        <label>
-          <span>Telefone</span>
-          <input id="customerPhone" name="telefone" type="tel" placeholder="(00) 00000-0000" required />
-        </label>
-        <label>
-          <span>Endereco</span>
-          <textarea id="customerAddress" name="endereco" rows="3" placeholder="Rua, numero, complemento" required></textarea>
-        </label>
-
-        <button class="primary-button checkout-button" id="checkoutButton" type="submit">
-          Finalizar Pedido
-        </button>
-      </form>
-    </aside>
-
-    <template id="productCardTemplate">
-      <article class="product-card">
-        <div class="product-card__image-wrap">
-          <img class="product-card__image" alt="" />
-          <span class="product-card__badge"></span>
-        </div>
-        <div class="product-card__content">
-          <div class="product-card__head">
-            <span class="product-card__category"></span>
-            <h3 class="product-card__title"></h3>
-          </div>
-          <div class="product-card__footer">
-            <strong class="product-card__price"></strong>
-            <button class="primary-button product-card__button" type="button">Adicionar</button>
-          </div>
-        </div>
-      </article>
-    </template>
-
-    <template id="cartItemTemplate">
-      <article class="cart-item">
-        <div class="cart-item__info">
-          <strong class="cart-item__name"></strong>
-          <span class="cart-item__price"></span>
-        </div>
-        <div class="cart-item__actions">
-          <div class="qty-stepper">
-            <button class="qty-stepper__button" data-action="decrease" type="button">-</button>
-            <span class="qty-stepper__value"></span>
-            <button class="qty-stepper__button" data-action="increase" type="button">+</button>
-          </div>
-          <button class="text-button" data-action="remove" type="button">Remover</button>
-        </div>
-      </article>
-    </template>
-
-    <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
-
-    <script src="./js/app.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
   </body>
 </html>

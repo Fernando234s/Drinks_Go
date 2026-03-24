@@ -1,158 +1,190 @@
-const productsGrid = document.getElementById('products-grid');
-const refreshProductsButton = document.getElementById('refresh-products');
-const addProductToggleButton = document.getElementById('add-product-toggle');
-const productForm = document.getElementById('product-form');
-const productIdInput = document.getElementById('product-id');
-const productNameInput = document.getElementById('product-name');
-const productCategoryInput = document.getElementById('product-category');
-const productPriceInput = document.getElementById('product-price');
-const productStockInput = document.getElementById('product-stock');
-const cancelProductButton = document.getElementById('cancel-product');
+const produtosDom = {
+  lista: document.getElementById("lista-produtos-admin"),
+  feedback: document.getElementById("feedback-produtos"),
+  botaoNovo: document.getElementById("nova-bebida"),
+  modal: document.getElementById("modal-bebida"),
+  tituloModal: document.getElementById("modal-bebida-titulo"),
+  form: document.getElementById("form-bebida"),
+  id: document.getElementById("bebida-id"),
+  nome: document.getElementById("bebida-nome"),
+  categoria: document.getElementById("bebida-categoria"),
+  preco: document.getElementById("bebida-preco"),
+  estoque: document.getElementById("bebida-estoque"),
+  imagemUrl: document.getElementById("bebida-imagem-url"),
+};
 
-let produtos = [];
-
-function limparFormulario() {
-  productForm.reset();
-  productIdInput.value = '';
-  productNameInput.focus();
-}
-
-function preencherFormulario(produto) {
-  productIdInput.value = produto.id;
-  productNameInput.value = produto.nome || '';
-  productCategoryInput.value = produto.categoria || '';
-  productPriceInput.value = Number(produto.preco || 0);
-  productStockInput.value = Number(produto.estoque || 0);
-  productNameInput.focus();
-}
-
-function renderizarProdutos(lista) {
-  if (!lista.length) {
-    productsGrid.innerHTML = '<div class="empty-state">Sem bebidas cadastradas.</div>';
+function mostrarFeedbackProdutosAdmin(message, isError = false) {
+  if (!produtosDom.feedback) {
     return;
   }
 
-  productsGrid.innerHTML = lista.map((produto) => `
-    <div class="product-row">
-      <div>
-        <div class="product-name">${produto.nome}</div>
-        <div class="product-meta">${produto.categoria || 'Sem categoria'}</div>
-      </div>
-      <div>${money(produto.preco)}</div>
-      <div>Estoque: ${produto.estoque ?? 0}</div>
-      <div class="product-actions">
-        <button class="button secondary small" type="button" data-edit-id="${produto.id}">Editar</button>
-        <button class="button danger small" type="button" data-delete-id="${produto.id}">Excluir</button>
-      </div>
-    </div>
-  `).join('');
+  produtosDom.feedback.textContent = message;
+  produtosDom.feedback.classList.remove("hidden", "error");
+  produtosDom.feedback.classList.toggle("error", Boolean(isError));
+}
 
-  document.querySelectorAll('[data-edit-id]').forEach((button) => {
-    button.addEventListener('click', () => editarBebida(Number(button.dataset.editId)));
+function obterImagemAdminProduto(produto) {
+  return obterImagemBebidaSalva(produto.id) || produto.imagem || obterImagemBebida(produto);
+}
+
+function abrirModalCrudBebida(bebida = null) {
+  if (!produtosDom.modal) {
+    return;
+  }
+
+  produtosDom.tituloModal.textContent = bebida ? "Editar bebida" : "Nova bebida";
+  produtosDom.id.value = bebida?.id || "";
+  produtosDom.nome.value = bebida?.nome || "";
+  produtosDom.categoria.value = bebida?.categoria || "";
+  produtosDom.preco.value = bebida?.preco ?? "";
+  produtosDom.estoque.value = bebida?.estoque ?? "";
+  produtosDom.imagemUrl.value = bebida ? obterImagemAdminProduto(bebida) : "";
+
+  produtosDom.modal.classList.add("is-open");
+  produtosDom.modal.setAttribute("aria-hidden", "false");
+}
+
+function fecharModalCrudBebida() {
+  if (!produtosDom.modal) {
+    return;
+  }
+
+  produtosDom.modal.classList.remove("is-open");
+  produtosDom.modal.setAttribute("aria-hidden", "true");
+  produtosDom.form?.reset();
+}
+
+function validarFormBebida() {
+  const campos = [produtosDom.nome, produtosDom.categoria, produtosDom.preco, produtosDom.estoque];
+  let invalido = false;
+
+  campos.forEach((campo) => {
+    const vazio = !String(campo.value || "").trim();
+    campo.classList.toggle("field-error", vazio);
+    if (vazio) {
+      invalido = true;
+    }
   });
 
-  document.querySelectorAll('[data-delete-id]').forEach((button) => {
-    button.addEventListener('click', () => excluirBebida(Number(button.dataset.deleteId)));
+  return !invalido;
+}
+
+function criarLinhaProdutoAdmin(produto) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${produto.nome}</td>
+    <td>${obterCategoriaNormalizada(produto.categoria)}</td>
+    <td>${formatarMoeda(produto.preco)}</td>
+    <td>${produto.estoque ?? 0}</td>
+    <td class="table-actions">
+      <button class="button button-ghost editar-produto" type="button">Editar</button>
+      <button class="button button-danger excluir-produto" type="button">Excluir</button>
+    </td>
+  `;
+
+  tr.querySelector(".editar-produto").addEventListener("click", () => {
+    abrirModalCrudBebida(produto);
   });
+
+  tr.querySelector(".excluir-produto").addEventListener("click", async () => {
+    if (!window.confirm(`Excluir ${produto.nome}?`)) {
+      return;
+    }
+
+    try {
+      await api.removerBebida(produto.id);
+      salvarImagemBebida(produto.id, "");
+      tr.remove();
+      window.dispatchEvent(new CustomEvent("admin:data-updated"));
+      mostrarFeedbackProdutosAdmin("Bebida removida");
+    } catch (error) {
+      mostrarFeedbackProdutosAdmin(error.message, true);
+    }
+  });
+
+  return tr;
 }
 
-async function carregarProdutos() {
-  productsGrid.innerHTML = '<div class="empty-state">Carregando...</div>';
-
-  try {
-    produtos = await apiFetch('/bebidas');
-    renderizarProdutos(produtos);
-  } catch (error) {
-    productsGrid.innerHTML = `<div class="empty-state">${error.message}</div>`;
-    alert(`Erro: ${error.message}`);
-  }
-}
-
-async function criarBebida(payload) {
-  try {
-    await apiFetch('/bebidas', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-
-    alert('Bebida cadastrada com sucesso.');
-    limparFormulario();
-    await carregarProdutos();
-  } catch (error) {
-    alert(`Erro: ${error.message}`);
-  }
-}
-
-function editarBebida(id) {
-  const produto = produtos.find((item) => item.id === id);
-
-  if (!produto) {
-    alert('Erro: bebida nao encontrada.');
-    return;
-  }
-
-  preencherFormulario(produto);
-}
-
-async function atualizarBebida(id, payload) {
-  try {
-    await apiFetch(`/bebidas/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    });
-
-    alert('Bebida atualizada com sucesso.');
-    limparFormulario();
-    await carregarProdutos();
-  } catch (error) {
-    alert(`Erro: ${error.message}`);
-  }
-}
-
-async function excluirBebida(id) {
-  const produto = produtos.find((item) => item.id === id);
-
-  if (!produto) {
-    alert('Erro: bebida nao encontrada.');
-    return;
-  }
-
-  if (!window.confirm(`Excluir "${produto.nome}"?`)) {
+async function renderizarProdutosCrud() {
+  if (!produtosDom.lista) {
     return;
   }
 
   try {
-    await apiFetch(`/bebidas/${id}`, {
-      method: 'DELETE',
-    });
+    const bebidas = normalizarLista(await api.listarBebidas());
 
-    alert('Bebida excluida com sucesso.');
-    await carregarProdutos();
+    if (!bebidas.length) {
+      produtosDom.lista.innerHTML = '<tr><td colspan="5">Sem bebidas</td></tr>';
+      return;
+    }
+
+    produtosDom.lista.innerHTML = "";
+    bebidas.forEach((bebida) => {
+      produtosDom.lista.appendChild(criarLinhaProdutoAdmin(bebida));
+    });
   } catch (error) {
-    alert(`Erro: ${error.message}`);
+    mostrarFeedbackProdutosAdmin(error.message, true);
+    produtosDom.lista.innerHTML = '<tr><td colspan="5">Erro</td></tr>';
   }
 }
 
-productForm.addEventListener('submit', async (event) => {
+async function salvarBebidaCrud(event) {
   event.preventDefault();
 
-  const payload = {
-    nome: productNameInput.value.trim(),
-    categoria: productCategoryInput.value.trim(),
-    preco: Number(productPriceInput.value),
-    estoque: Number(productStockInput.value),
-  };
-
-  if (productIdInput.value) {
-    await atualizarBebida(Number(productIdInput.value), payload);
+  if (!validarFormBebida()) {
+    mostrarFeedbackProdutosAdmin("Preencha os campos", true);
     return;
   }
 
-  await criarBebida(payload);
-});
+  const bebidaId = produtosDom.id.value.trim();
+  const payload = {
+    nome: produtosDom.nome.value.trim(),
+    categoria: produtosDom.categoria.value.trim(),
+    preco: Number(produtosDom.preco.value),
+    estoque: Number(produtosDom.estoque.value),
+  };
 
-cancelProductButton.addEventListener('click', limparFormulario);
-addProductToggleButton.addEventListener('click', limparFormulario);
-refreshProductsButton.addEventListener('click', carregarProdutos);
+  try {
+    const bebida = bebidaId
+      ? await api.atualizarBebida(bebidaId, payload)
+      : await api.criarBebida(payload);
 
-carregarProdutos();
+    const bebidaNormalizada = bebida?.data || bebida;
+    salvarImagemBebida(bebidaNormalizada.id, produtosDom.imagemUrl.value.trim());
+    fecharModalCrudBebida();
+    await renderizarProdutosCrud();
+    window.dispatchEvent(new CustomEvent("admin:data-updated"));
+    mostrarFeedbackProdutosAdmin(bebidaId ? "Bebida atualizada" : "Bebida criada");
+  } catch (error) {
+    mostrarFeedbackProdutosAdmin(error.message, true);
+  }
+}
+
+function inicializarProdutosCrud() {
+  if (!produtosDom.lista) {
+    return;
+  }
+
+  renderizarProdutosCrud();
+  produtosDom.botaoNovo?.addEventListener("click", () => abrirModalCrudBebida());
+  produtosDom.form?.addEventListener("submit", salvarBebidaCrud);
+
+  document.querySelectorAll("[data-modal-close-parent='modal-bebida']").forEach((botao) => {
+    botao.addEventListener("click", fecharModalCrudBebida);
+  });
+
+  produtosDom.modal?.addEventListener("click", (event) => {
+    if (event.target === produtosDom.modal) {
+      fecharModalCrudBebida();
+    }
+  });
+
+  [produtosDom.nome, produtosDom.categoria, produtosDom.preco, produtosDom.estoque].forEach((campo) => {
+    campo?.addEventListener("input", () => campo.classList.remove("field-error"));
+  });
+
+  window.addEventListener("produtos:updated", renderizarProdutosCrud);
+  window.addEventListener("admin:data-updated", renderizarProdutosCrud);
+}
+
+inicializarProdutosCrud();

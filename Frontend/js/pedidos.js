@@ -1,111 +1,179 @@
-const ordersList = document.getElementById('orders-list');
-const refreshOrdersButton = document.getElementById('refresh-orders');
+const listaPedidos = document.getElementById("lista-pedidos");
+const feedbackPedidos = document.getElementById("feedback-pedidos");
 
-function normalizeStatusValue(status) {
-  if (typeof status === 'number') {
-    return status;
+function mostrarFeedbackPedidos(message, isError = false) {
+  feedbackPedidos.textContent = message;
+  feedbackPedidos.classList.remove("hidden", "error");
+
+  if (isError) {
+    feedbackPedidos.classList.add("error");
   }
-
-  const normalized = String(status || '').trim().toLowerCase();
-
-  if (normalized.includes('preparo')) {
-    return 2;
-  }
-
-  if (normalized.includes('entrega')) {
-    return 3;
-  }
-
-  if (normalized.includes('final')) {
-    return 4;
-  }
-
-  return 1;
 }
 
-function orderStatusOptions(selectedValue) {
-  const options = [
-    { value: 1, label: 'Pendente' },
-    { value: 2, label: 'Em preparo' },
-    { value: 3, label: 'Saiu para entrega' },
-    { value: 4, label: 'Finalizado' },
+function obterNomeCliente(pedido) {
+  if (pedido.cliente?.nome) {
+    return pedido.cliente.nome;
+  }
+
+  if (pedido.cliente_nome) {
+    return pedido.cliente_nome;
+  }
+
+  if (pedido.cliente) {
+    return pedido.cliente;
+  }
+
+  return `Cliente ${pedido.cliente_id ?? "-"}`;
+}
+
+function obterNomeStatus(pedido) {
+  if (pedido.status?.nome) {
+    return pedido.status.nome;
+  }
+
+  if (pedido.status_nome) {
+    return pedido.status_nome;
+  }
+
+  if (pedido.status) {
+    return pedido.status;
+  }
+
+  return `Status ${pedido.status_id ?? "-"}`;
+}
+
+function obterItensPedido(pedido) {
+  if (Array.isArray(pedido.itens)) {
+    return pedido.itens;
+  }
+
+  if (Array.isArray(pedido.bebidas)) {
+    return pedido.bebidas;
+  }
+
+  return [];
+}
+
+function criarOpcoesStatus(statusIdAtual) {
+  const opcoesStatus = [
+    { id: 1, nome: "Pendente" },
+    { id: 2, nome: "Em preparo" },
+    { id: 3, nome: "Finalizado" },
+    { id: 4, nome: "Entregue" },
   ];
 
-  return options.map((option) => (
-    `<option value="${option.value}" ${normalizeStatusValue(selectedValue) === option.value ? 'selected' : ''}>${option.label}</option>`
-  )).join('');
+  return opcoesStatus
+    .map((status) => {
+      const selected = Number(status.id) === Number(statusIdAtual) ? "selected" : "";
+      return `<option value="${status.id}" ${selected}>${status.nome}</option>`;
+    })
+    .join("");
 }
 
-function renderOrders(orders) {
-  if (!orders.length) {
-    ordersList.innerHTML = '<div class="empty-state">Sem pedidos.</div>';
-    return;
-  }
+function criarCardPedido(pedido) {
+  const article = document.createElement("article");
+  const itens = obterItensPedido(pedido);
+  const statusOriginal = obterNomeStatus(pedido);
+  const statusVisual = obterRotuloStatus(statusOriginal);
 
-  ordersList.innerHTML = orders.map((order) => `
-    <article class="order-card">
-      <div class="order-head">
-        <div>
-          <div class="order-title">Pedido #${order.id}</div>
-          <div class="product-meta">${order.cliente_nome || 'Cliente nao informado'}</div>
-        </div>
-        <div class="product-meta">${new Date(order.data_pedido).toLocaleString('pt-BR')}</div>
+  article.className = "order-card fade-up";
+  article.innerHTML = `
+    <div class="order-top">
+      <div>
+        <span class="eyebrow">Pedido #${pedido.id ?? "-"}</span>
+        <h2>${obterNomeCliente(pedido)}</h2>
       </div>
-      <div class="order-items">
-        ${(order.bebidas || []).map((item) => `
-          <div class="order-item">
-            <span>${item.nome}</span>
-            <strong>x${item.quantidade}</strong>
-          </div>
-        `).join('')}
-      </div>
-      <div class="order-actions">
-        <select data-status-order="${order.id}">
-          ${orderStatusOptions(order.status)}
-        </select>
-        <button class="button danger" type="button" data-delete-order="${order.id}">Excluir</button>
-      </div>
-    </article>
-  `).join('');
+      <span class="status-badge ${obterClasseStatus(statusOriginal)}">${statusVisual}</span>
+    </div>
 
-  document.querySelectorAll('[data-status-order]').forEach((select) => {
-    select.addEventListener('change', async () => {
-      try {
-        await apiFetch(`/pedidos/${select.dataset.statusOrder}/status`, {
-          method: 'PUT',
-          body: JSON.stringify({ status_id: Number(select.value) }),
-        });
-        await loadOrders();
-      } catch (error) {
-        alert(error.message);
+    <div class="order-metrics">
+      <div class="metric-box">
+        <span>Status</span>
+        <strong>${statusVisual}</strong>
+      </div>
+      <div class="metric-box">
+        <span>Itens</span>
+        <strong>${itens.length} produto(s)</strong>
+      </div>
+    </div>
+
+    <div class="order-summary">
+      ${
+        itens.length
+          ? `<div class="order-items-list">${itens
+              .map((item) => {
+                const nome =
+                  item.bebida?.nome ||
+                  item.nome ||
+                  item.bebida_nome ||
+                  `Bebida ${item.bebida_id ?? "-"}`;
+                return `
+                  <div class="order-item">
+                    <span>${nome}</span>
+                    <strong>x${item.quantidade ?? 0}</strong>
+                  </div>
+                `;
+              })
+              .join("")}</div>`
+          : ""
       }
-    });
+    </div>
+
+    <div class="order-actions">
+      <select class="status-select">${criarOpcoesStatus(pedido.status_id)}</select>
+      <button class="button primary atualizar-status" type="button">Atualizar status</button>
+      <button class="button danger cancelar-pedido" type="button">Cancelar pedido</button>
+    </div>
+  `;
+
+  article.querySelector(".atualizar-status").addEventListener("click", async () => {
+    const statusId = Number(article.querySelector(".status-select").value);
+
+    try {
+      await api.atualizarStatusPedido(pedido.id, statusId);
+      mostrarFeedbackPedidos(`Status do pedido #${pedido.id} atualizado.`);
+      carregarPedidos();
+    } catch (error) {
+      mostrarFeedbackPedidos(error.message, true);
+    }
   });
 
-  document.querySelectorAll('[data-delete-order]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      try {
-        await apiFetch(`/pedidos/${button.dataset.deleteOrder}`, {
-          method: 'DELETE',
-        });
-        await loadOrders();
-      } catch (error) {
-        alert(error.message);
-      }
-    });
+  article.querySelector(".cancelar-pedido").addEventListener("click", async () => {
+    try {
+      await api.cancelarPedido(pedido.id);
+      mostrarFeedbackPedidos(`Pedido #${pedido.id} cancelado.`);
+      carregarPedidos();
+    } catch (error) {
+      mostrarFeedbackPedidos(error.message, true);
+    }
   });
+
+  return article;
 }
 
-async function loadOrders() {
-  ordersList.innerHTML = '<div class="empty-state">Carregando...</div>';
-
+async function carregarPedidos() {
   try {
-    const orders = await apiFetch('/pedidos');
-    renderOrders(orders);
+    const pedidos = normalizarLista(await api.listarPedidos());
+
+    if (!pedidos.length) {
+      listaPedidos.innerHTML = criarEmptyState(
+        "Sem pedidos",
+        " "
+      );
+      return;
+    }
+
+    listaPedidos.innerHTML = "";
+    pedidos.forEach((pedido) => {
+      listaPedidos.appendChild(criarCardPedido(pedido));
+    });
   } catch (error) {
-    ordersList.innerHTML = `<div class="empty-state">${error.message}</div>`;
+    mostrarFeedbackPedidos(error.message, true);
+    listaPedidos.innerHTML = criarEmptyState(
+      "Erro",
+      " "
+    );
   }
 }
 
-refreshOrdersButton.addEventListener('click', loadOrders);
-loadOrders();
+carregarPedidos();

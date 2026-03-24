@@ -1,394 +1,592 @@
-const API_BASE_URL = "http://localhost:3000";
-const STORAGE_KEY = "drink_go_cart_v1";
+const THEME_STORAGE_KEY = "drinkgo_theme";
 
-const state = {
-  products: [],
-  activeCategory: "Todas",
-  cart: loadCart(),
-  isCartOpen: false,
+const PUBLIC_PRODUCT_IMAGES = {
+  "coca-cola 2l":
+    "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=900&q=80",
+  "guarana antarctica 2l":
+    "https://images.unsplash.com/photo-1624517452488-04869289c4ca?auto=format&fit=crop&w=900&q=80",
+  "pepsi 2l":
+    "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?auto=format&fit=crop&w=900&q=80",
+  "sprite 2l":
+    "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=900&q=80",
+  "fanta laranja 2l":
+    "https://images.unsplash.com/photo-1624517452433-1f2c8c79fba5?auto=format&fit=crop&w=900&q=80",
+  "schweppes citrus 1l":
+    "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80",
+  "heineken 600ml":
+    "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=900&q=80",
+  "budweiser 600ml":
+    "https://images.unsplash.com/photo-1571767454098-246b94fbcf70?auto=format&fit=crop&w=900&q=80",
+  "skol 350ml":
+    "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&w=900&q=80",
+  "stella artois 600ml":
+    "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=900&q=80",
+  "corona long neck":
+    "https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=900&q=80",
+  "brahma duplo malte 350ml":
+    "https://images.unsplash.com/photo-1516458464372-ee7eae24b460?auto=format&fit=crop&w=900&q=80",
+  "red bull 250ml":
+    "https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=900&q=80",
+  "monster energy 473ml":
+    "https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=900&q=80",
+  "tnt energy 269ml":
+    "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=900&q=80",
+  caipirinha:
+    "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80",
+  mojito:
+    "https://images.unsplash.com/photo-1578664182520-0b39c1f1a93b?auto=format&fit=crop&w=900&q=80",
+  "gin tonica":
+    "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80",
+  "moscow mule":
+    "https://images.unsplash.com/photo-1563223771-375783ee91ad?auto=format&fit=crop&w=900&q=80",
+  "agua mineral 500ml":
+    "https://images.unsplash.com/photo-1561047029-3000c68339ca?auto=format&fit=crop&w=900&q=80",
+  "suco natural laranja 500ml":
+    "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=900&q=80",
+  "whisky jack daniel's 1l":
+    "https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=900&q=80",
+  "vodka smirnoff 998ml":
+    "https://images.unsplash.com/photo-1582819509237-df5b1dbf9f24?auto=format&fit=crop&w=900&q=80",
 };
 
-const elements = {
-  productGrid: document.getElementById("productGrid"),
-  catalogEmpty: document.getElementById("catalogEmpty"),
-  filters: document.getElementById("filters"),
-  cartSidebar: document.getElementById("cartSidebar"),
-  cartBackdrop: document.getElementById("cartBackdrop"),
-  cartToggle: document.getElementById("cartToggle"),
-  closeCart: document.getElementById("closeCart"),
-  cartItems: document.getElementById("cartItems"),
-  cartCount: document.getElementById("cartCount"),
-  cartTotal: document.getElementById("cartTotal"),
-  checkoutForm: document.getElementById("checkoutForm"),
-  checkoutButton: document.getElementById("checkoutButton"),
-  productCount: document.getElementById("productCount"),
-  categoryCount: document.getElementById("categoryCount"),
-  toastStack: document.getElementById("toastStack"),
-  productCardTemplate: document.getElementById("productCardTemplate"),
-  cartItemTemplate: document.getElementById("cartItemTemplate"),
+const publicDom = {
+  listaProdutos: document.getElementById("lista-produtos"),
+  feedbackProdutos: document.getElementById("feedback-produtos"),
+  catalogoCount: document.getElementById("catalogo-count"),
+  listaCarrinho: document.getElementById("lista-carrinho"),
+  feedbackCarrinho: document.getElementById("feedback-carrinho"),
+  valorTotal: document.getElementById("valor-total"),
+  resumoItens: document.getElementById("resumo-itens"),
+  resumoItensTotal: document.getElementById("resumo-itens-total"),
+  resumoTipos: document.getElementById("resumo-tipos"),
+  formCliente: document.getElementById("form-cliente"),
+  inputClienteNome: document.getElementById("cliente-nome"),
+  inputClienteTelefone: document.getElementById("cliente-telefone"),
+  inputClienteEndereco: document.getElementById("cliente-endereco"),
+  clienteSelect: document.getElementById("cliente-select"),
+  botaoFinalizar: document.getElementById("finalizar-pedido"),
+  modalPedido: document.getElementById("modal-confirmacao-pedido"),
+  modalPedidoTexto: document.getElementById("modal-pedido-texto"),
+  modalPedidoResumo: document.getElementById("modal-pedido-resumo"),
 };
 
-initialize();
+const publicState = {
+  clientes: [],
+  ultimoClienteCriadoId: null,
+};
 
-function initialize() {
-  bindEvents();
-  renderCart();
-  fetchProducts();
+function aplicarTemaPublico(tema) {
+  document.documentElement.setAttribute("data-theme", tema);
+  localStorage.setItem(THEME_STORAGE_KEY, tema);
 }
 
-function bindEvents() {
-  elements.cartToggle.addEventListener("click", () => toggleCart(true));
-  elements.closeCart.addEventListener("click", () => toggleCart(false));
-  elements.cartBackdrop.addEventListener("click", () => toggleCart(false));
-  elements.checkoutForm.addEventListener("submit", handleCheckout);
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.isCartOpen) {
-      toggleCart(false);
+function inicializarTemaPublico() {
+  const salvo = localStorage.getItem(THEME_STORAGE_KEY);
+  const prefereEscuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  aplicarTemaPublico(salvo || (prefereEscuro ? "dark" : "light"));
+}
+
+function alternarTemaPublico() {
+  const atual = document.documentElement.getAttribute("data-theme") || "light";
+  aplicarTemaPublico(atual === "dark" ? "light" : "dark");
+}
+
+function mostrarFeedbackPublico(elemento, mensagem, isError = false) {
+  if (!elemento) {
+    return;
+  }
+
+  elemento.textContent = mensagem;
+  elemento.classList.remove("hidden", "error");
+  elemento.classList.toggle("error", Boolean(isError));
+}
+
+function animarCliquePublico(botao) {
+  if (!botao) {
+    return;
+  }
+
+  botao.classList.remove("is-pressed");
+  void botao.offsetWidth;
+  botao.classList.add("is-pressed");
+}
+
+function contarItensCarrinhoPublico(itens = lerCarrinho()) {
+  return itens.reduce((acc, item) => acc + Number(item.quantidade || 0), 0);
+}
+
+function atualizarBadgeCarrinhoPublico(itens = lerCarrinho()) {
+  const total = contarItensCarrinhoPublico(itens);
+
+  document.querySelectorAll("[data-cart-count]").forEach((elemento) => {
+    elemento.textContent = total;
+    elemento.classList.remove("pulse");
+    if (total > 0) {
+      void elemento.offsetWidth;
+      elemento.classList.add("pulse");
     }
   });
 }
 
-async function fetchProducts() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/bebidas`);
+function vibrarCarrinhoPublico() {
+  document.querySelectorAll(".nav-cart-button").forEach((elemento) => {
+    elemento.classList.remove("shake");
+    void elemento.offsetWidth;
+    elemento.classList.add("shake");
+  });
+}
 
-    if (!response.ok) {
-      throw new Error("Nao foi possivel carregar as bebidas.");
-    }
+function obterImagemPublica(produto) {
+  const chave = String(produto.nome || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-    const data = await response.json();
-    state.products = Array.isArray(data) ? data : [];
-    renderFilters();
-    renderProducts();
-    renderCart();
-    updateHeroStats();
-  } catch (error) {
-    showToast(error.message, "error");
-    elements.productGrid.innerHTML = "";
-    elements.catalogEmpty.classList.remove("hidden");
-    elements.catalogEmpty.innerHTML = `
-      <strong>Falha ao carregar bebidas.</strong>
-      <span>Verifique se a API esta ativa em ${API_BASE_URL}.</span>
-    `;
+  return (
+    obterImagemBebidaSalva(produto.id) ||
+    PUBLIC_PRODUCT_IMAGES[chave] ||
+    obterImagemBebida(produto)
+  );
+}
+
+function calcularTotalPublico(carrinho) {
+  return carrinho.reduce(
+    (acc, item) => acc + Number(item.preco || 0) * Number(item.quantidade || 0),
+    0
+  );
+}
+
+function renderizarResumoPublico(carrinho) {
+  const totalItens = contarItensCarrinhoPublico(carrinho);
+  const totalCategorias = new Set(
+    carrinho.map((item) => obterCategoriaNormalizada(item.categoria))
+  ).size;
+
+  if (publicDom.resumoItens) {
+    publicDom.resumoItens.textContent = `${totalItens} itens`;
+  }
+
+  if (publicDom.resumoItensTotal) {
+    publicDom.resumoItensTotal.textContent = String(totalItens);
+  }
+
+  if (publicDom.resumoTipos) {
+    publicDom.resumoTipos.textContent = String(totalCategorias);
+  }
+
+  if (publicDom.valorTotal) {
+    publicDom.valorTotal.textContent = formatarMoeda(calcularTotalPublico(carrinho));
   }
 }
 
-function renderFilters() {
-  const categories = [
-    "Todas",
-    ...new Set(
-      state.products
-        .map((product) => sanitizeCategory(product.categoria))
-        .filter(Boolean)
-    ),
-  ];
+function criarCardProdutoPublico(produto) {
+  const article = document.createElement("article");
+  const imagem = obterImagemPublica(produto);
 
-  elements.filters.innerHTML = "";
-
-  categories.forEach((category) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `filter-chip${category === state.activeCategory ? " is-active" : ""}`;
-    button.textContent = category;
-    button.addEventListener("click", () => {
-      state.activeCategory = category;
-      renderFilters();
-      renderProducts();
-    });
-    elements.filters.appendChild(button);
-  });
-}
-
-function renderProducts() {
-  const products = getVisibleProducts();
-  elements.productGrid.innerHTML = "";
-  elements.catalogEmpty.classList.toggle("hidden", products.length > 0);
-
-  products.forEach((product) => {
-    const fragment = elements.productCardTemplate.content.cloneNode(true);
-    const card = fragment.querySelector(".product-card");
-    const image = fragment.querySelector(".product-card__image");
-    const category = sanitizeCategory(product.categoria);
-
-    image.src = resolveImage(product);
-    image.alt = product.nome;
-    fragment.querySelector(".product-card__badge").textContent = getBadgeLabel(product);
-    fragment.querySelector(".product-card__category").textContent = category;
-    fragment.querySelector(".product-card__title").textContent = product.nome;
-    fragment.querySelector(".product-card__price").textContent = formatCurrency(product.preco);
-
-    fragment
-      .querySelector(".product-card__button")
-      .addEventListener("click", () => addToCart(product));
-
-    card.dataset.productId = String(product.id);
-    elements.productGrid.appendChild(fragment);
-  });
-}
-
-function renderCart() {
-  const cartEntries = state.cart.map((item) => {
-    const product = state.products.find((entry) => String(entry.id) === String(item.id));
-    return product ? { ...product, quantity: item.quantity } : null;
-  }).filter(Boolean);
-
-  elements.cartItems.innerHTML = "";
-
-  if (cartEntries.length === 0) {
-    elements.cartItems.innerHTML = `
-      <div class="empty-cart">
-        <strong>Seu carrinho esta vazio.</strong>
-        <span>Adicione bebidas para continuar.</span>
+  article.className = "product-card fade-up";
+  article.innerHTML = `
+    <div class="product-media">
+      <div class="product-overlay">
+        <span class="tag">${obterCategoriaNormalizada(produto.categoria)}</span>
       </div>
-    `;
-  } else {
-    cartEntries.forEach((entry) => {
-      const fragment = elements.cartItemTemplate.content.cloneNode(true);
-      fragment.querySelector(".cart-item__name").textContent = entry.nome;
-      fragment.querySelector(".cart-item__price").textContent = `${entry.quantity} x ${formatCurrency(entry.preco)} = ${formatCurrency(entry.quantity * Number(entry.preco || 0))}`;
-      fragment.querySelector(".qty-stepper__value").textContent = entry.quantity;
+      <img src="${imagem}" alt="${produto.nome}" loading="lazy" />
+    </div>
+    <div class="product-body">
+      <h3 class="product-name">${produto.nome}</h3>
+      <div class="product-footer">
+        <div class="price-block">
+          <span class="product-category">${obterCategoriaNormalizada(produto.categoria)}</span>
+          <div class="price">${formatarMoeda(produto.preco)}</div>
+        </div>
+        <button class="button button-primary" type="button">Adicionar</button>
+      </div>
+    </div>
+  `;
 
-      fragment.querySelector('[data-action="decrease"]').addEventListener("click", () => updateQuantity(entry.id, entry.quantity - 1));
-      fragment.querySelector('[data-action="increase"]').addEventListener("click", () => updateQuantity(entry.id, entry.quantity + 1));
-      fragment.querySelector('[data-action="remove"]').addEventListener("click", () => removeFromCart(entry.id));
+  const img = article.querySelector("img");
+  img.addEventListener(
+    "error",
+    () => {
+      img.src = obterImagemBebida(produto);
+    },
+    { once: true }
+  );
 
-      elements.cartItems.appendChild(fragment);
+  const botao = article.querySelector("button");
+  botao.addEventListener("click", () => {
+    animarCliquePublico(botao);
+    article.classList.remove("is-adding");
+    void article.offsetWidth;
+    article.classList.add("is-adding");
+
+    adicionarAoCarrinho(
+      {
+        id: produto.id,
+        nome: produto.nome,
+        categoria: produto.categoria,
+        preco: produto.preco,
+        imagem,
+      },
+      { action: "add", source: "cliente" }
+    );
+
+    mostrarFeedbackPublico(publicDom.feedbackProdutos, `${produto.nome} adicionado`);
+  });
+
+  return article;
+}
+
+async function carregarProdutosPublicos() {
+  if (!publicDom.listaProdutos) {
+    return;
+  }
+
+  try {
+    const produtos = normalizarLista(await api.listarBebidas());
+
+    if (publicDom.catalogoCount) {
+      publicDom.catalogoCount.textContent = `${produtos.length} itens`;
+    }
+
+    if (!produtos.length) {
+      publicDom.listaProdutos.innerHTML = criarEmptyState("Sem produtos", " ");
+      return;
+    }
+
+    publicDom.listaProdutos.innerHTML = "";
+    produtos.forEach((produto) => {
+      publicDom.listaProdutos.appendChild(criarCardProdutoPublico(produto));
     });
+  } catch (error) {
+    mostrarFeedbackPublico(publicDom.feedbackProdutos, error.message, true);
+    publicDom.listaProdutos.innerHTML = criarEmptyState("Erro", " ");
   }
-
-  const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cartEntries.reduce((sum, item) => sum + Number(item.preco || 0) * item.quantity, 0);
-
-  elements.cartCount.textContent = String(totalItems);
-  elements.cartTotal.textContent = formatCurrency(totalPrice);
-  persistCart();
 }
 
-function updateHeroStats() {
-  const categories = new Set(state.products.map((product) => sanitizeCategory(product.categoria)));
-  elements.productCount.textContent = String(state.products.length);
-  elements.categoryCount.textContent = String(categories.size);
+function criarItemCarrinhoPublico(item) {
+  const article = document.createElement("article");
+  const subtotal = Number(item.preco || 0) * Number(item.quantidade || 0);
+
+  article.className = "cart-item";
+  article.innerHTML = `
+    <div class="cart-item-header">
+      <div>
+        <strong>${item.nome}</strong>
+        <div class="cart-item-category">${obterCategoriaNormalizada(item.categoria)}</div>
+      </div>
+      <button class="icon-button-soft remover-item" type="button">x</button>
+    </div>
+    <div class="cart-item-footer">
+      <div class="cart-controls">
+        <button class="qty-button diminuir" type="button">-</button>
+        <span class="qty-value">${item.quantidade}</span>
+        <button class="qty-button aumentar" type="button">+</button>
+      </div>
+      <div class="cart-totals">
+        <div class="cart-item-price">${formatarMoeda(item.preco)}</div>
+        <div class="cart-item-subtotal">${formatarMoeda(subtotal)}</div>
+      </div>
+    </div>
+  `;
+
+  article.querySelector(".aumentar").addEventListener("click", () => {
+    atualizarQuantidadeCarrinho(item.id, Number(item.quantidade || 0) + 1, {
+      source: "cliente",
+      action: "update",
+    });
+  });
+
+  article.querySelector(".diminuir").addEventListener("click", () => {
+    atualizarQuantidadeCarrinho(item.id, Number(item.quantidade || 0) - 1, {
+      source: "cliente",
+      action: "update",
+    });
+  });
+
+  article.querySelector(".remover-item").addEventListener("click", () => {
+    atualizarQuantidadeCarrinho(item.id, 0, {
+      source: "cliente",
+      action: "remove",
+    });
+  });
+
+  return article;
 }
 
-function getVisibleProducts() {
-  if (state.activeCategory === "Todas") {
-    return state.products;
-  }
-
-  return state.products.filter(
-    (product) => sanitizeCategory(product.categoria) === state.activeCategory
-  );
-}
-
-function addToCart(product) {
-  const currentItem = state.cart.find((item) => String(item.id) === String(product.id));
-
-  if (currentItem) {
-    currentItem.quantity += 1;
-  } else {
-    state.cart.push({ id: product.id, quantity: 1 });
-  }
-
-  renderCart();
-  pulseCard(product.id);
-  showToast(`${product.nome} adicionado ao carrinho.`, "success");
-}
-
-function updateQuantity(productId, nextQuantity) {
-  if (nextQuantity <= 0) {
-    removeFromCart(productId);
+function renderizarCarrinhoPublico() {
+  if (!publicDom.listaCarrinho) {
     return;
   }
 
-  state.cart = state.cart.map((item) =>
-    String(item.id) === String(productId) ? { ...item, quantity: nextQuantity } : item
-  );
+  const carrinho = lerCarrinho();
 
-  renderCart();
-}
-
-function removeFromCart(productId) {
-  state.cart = state.cart.filter((item) => String(item.id) !== String(productId));
-  renderCart();
-}
-
-async function handleCheckout(event) {
-  event.preventDefault();
-
-  if (state.cart.length === 0) {
-    showToast("Adicione pelo menos uma bebida ao carrinho.", "error");
+  if (!carrinho.length) {
+    publicDom.listaCarrinho.innerHTML = criarEmptyState("Carrinho vazio", " ");
+    renderizarResumoPublico([]);
     return;
   }
 
-  const formData = new FormData(elements.checkoutForm);
-  const cliente = {
-    nome: String(formData.get("nome") || "").trim(),
-    telefone: String(formData.get("telefone") || "").trim(),
-    endereco: String(formData.get("endereco") || "").trim(),
+  publicDom.listaCarrinho.innerHTML = "";
+  carrinho.forEach((item) => {
+    publicDom.listaCarrinho.appendChild(criarItemCarrinhoPublico(item));
+  });
+
+  renderizarResumoPublico(carrinho);
+}
+
+function normalizarClientePublico(cliente) {
+  if (!cliente || typeof cliente !== "object") {
+    return null;
+  }
+
+  return cliente.data && typeof cliente.data === "object" ? cliente.data : cliente;
+}
+
+function obterNomeClientePublico(cliente) {
+  return cliente?.nome || cliente?.cliente || `Cliente ${cliente?.id ?? ""}`.trim();
+}
+
+function marcarErroCampoPublico(campo, hasError) {
+  if (!campo) {
+    return;
+  }
+
+  campo.classList.toggle("field-error", Boolean(hasError));
+}
+
+function validarClientePublico() {
+  const nomeVazio = !publicDom.inputClienteNome?.value.trim();
+  const telefoneVazio = !publicDom.inputClienteTelefone?.value.trim();
+  const enderecoVazio = !publicDom.inputClienteEndereco?.value.trim();
+
+  marcarErroCampoPublico(publicDom.inputClienteNome, nomeVazio);
+  marcarErroCampoPublico(publicDom.inputClienteTelefone, telefoneVazio);
+  marcarErroCampoPublico(publicDom.inputClienteEndereco, enderecoVazio);
+
+  return !(nomeVazio || telefoneVazio || enderecoVazio);
+}
+
+function limparCamposClientePublico() {
+  [publicDom.inputClienteNome, publicDom.inputClienteTelefone, publicDom.inputClienteEndereco].forEach((campo) => {
+    if (campo) {
+      campo.value = "";
+      campo.classList.remove("field-error");
+    }
+  });
+}
+
+function preencherCamposClientePublico(cliente) {
+  if (publicDom.inputClienteNome) {
+    publicDom.inputClienteNome.value = cliente?.nome || "";
+  }
+  if (publicDom.inputClienteTelefone) {
+    publicDom.inputClienteTelefone.value = cliente?.telefone || "";
+  }
+  if (publicDom.inputClienteEndereco) {
+    publicDom.inputClienteEndereco.value = cliente?.endereco || "";
+  }
+}
+
+function preencherSelectClientesPublico(selectedId = "") {
+  if (!publicDom.clienteSelect) {
+    return;
+  }
+
+  publicDom.clienteSelect.innerHTML = [
+    '<option value="">Cliente salvo</option>',
+    ...publicState.clientes.map((cliente) => {
+      const selected = String(selectedId) === String(cliente.id) ? "selected" : "";
+      return `<option value="${cliente.id}" ${selected}>${obterNomeClientePublico(cliente)}</option>`;
+    }),
+  ].join("");
+}
+
+async function carregarClientesPublico(selectedId = "") {
+  if (!publicDom.clienteSelect) {
+    return;
+  }
+
+  try {
+    const clientes = normalizarLista(await api.listarClientes());
+    publicState.clientes = mesclarClientesComEstadoLocal(clientes).filter(Boolean);
+    preencherSelectClientesPublico(selectedId);
+  } catch (error) {
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, error.message, true);
+  }
+}
+
+async function salvarClientePublico() {
+  if (!validarClientePublico()) {
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, "Preencha os campos", true);
+    return;
+  }
+
+  const payload = {
+    nome: publicDom.inputClienteNome.value.trim(),
+    telefone: publicDom.inputClienteTelefone.value.trim(),
+    endereco: publicDom.inputClienteEndereco.value.trim(),
   };
 
-  if (!cliente.nome || !cliente.telefone || !cliente.endereco) {
-    showToast("Preencha nome, telefone e endereco.", "error");
-    return;
-  }
-
-  setCheckoutLoading(true);
-
   try {
-    const clienteCriado = await request("/clientes", {
-      method: "POST",
-      body: JSON.stringify(cliente),
-    });
-
-    await request("/pedidos", {
-      method: "POST",
-      body: JSON.stringify({
-        cliente_id: clienteCriado.id,
-        status_id: 1,
-        itens: state.cart.map((item) => ({
-          bebida_id: item.id,
-          quantidade: item.quantity,
-        })),
-      }),
-    });
-
-    state.cart = [];
-    renderCart();
-    elements.checkoutForm.reset();
-    toggleCart(false);
-    showToast("Pedido finalizado com sucesso.", "success");
-  } catch (error) {
-    showToast(error.message, "error");
-  } finally {
-    setCheckoutLoading(false);
-  }
-}
-
-function toggleCart(forceState) {
-  state.isCartOpen = typeof forceState === "boolean" ? forceState : !state.isCartOpen;
-  elements.cartSidebar.classList.toggle("is-open", state.isCartOpen);
-  elements.cartBackdrop.classList.toggle("hidden", !state.isCartOpen);
-  document.body.style.overflow = state.isCartOpen ? "hidden" : "";
-}
-
-function setCheckoutLoading(isLoading) {
-  elements.checkoutButton.disabled = isLoading;
-  elements.checkoutButton.textContent = isLoading ? "Enviando..." : "Finalizar Pedido";
-}
-
-function request(path, options = {}) {
-  return fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  }).then(async (response) => {
-    if (!response.ok) {
-      let message = "Nao foi possivel concluir a operacao.";
-
-      try {
-        const errorData = await response.json();
-        message = errorData.erro || errorData.message || message;
-      } catch (error) {
-        message = response.statusText || message;
-      }
-
-      throw new Error(message);
+    const clienteCriado = normalizarClientePublico(await api.criarCliente(payload));
+    if (clienteCriado?.id) {
+      desmarcarClienteRemovido(clienteCriado.id);
+      limparOverrideCliente(clienteCriado.id);
+      publicState.ultimoClienteCriadoId = clienteCriado.id;
     }
-
-    return response.json();
-  });
-}
-
-function loadCart() {
-  try {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(data) ? data : [];
+    limparCamposClientePublico();
+    await carregarClientesPublico(publicState.ultimoClienteCriadoId || "");
+    window.dispatchEvent(new CustomEvent("clientes:updated"));
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, "Cliente salvo");
   } catch (error) {
-    return [];
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, error.message, true);
   }
 }
 
-function persistCart() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart));
-}
-
-function pulseCard(productId) {
-  const card = document.querySelector(`[data-product-id="${productId}"]`);
-
-  if (!card) {
-    return;
-  }
-
-  card.animate(
-    [
-      { transform: "translateY(0) scale(1)" },
-      { transform: "translateY(-6px) scale(1.01)" },
-      { transform: "translateY(0) scale(1)" },
-    ],
-    {
-      duration: 320,
-      easing: "ease-out",
-    }
+function selecionarClientePublico() {
+  const cliente = publicState.clientes.find(
+    (item) => String(item.id) === String(publicDom.clienteSelect.value || "")
   );
-}
 
-function showToast(message, type = "default") {
-  const toast = document.createElement("div");
-  toast.className = `toast${type !== "default" ? ` toast--${type}` : ""}`;
-  toast.textContent = message;
-  elements.toastStack.appendChild(toast);
-
-  window.setTimeout(() => {
-    toast.remove();
-  }, 2600);
-}
-
-function sanitizeCategory(category) {
-  return String(category || "Sem categoria").trim() || "Sem categoria";
-}
-
-function getBadgeLabel(product) {
-  const estoque = Number(product.estoque || 0);
-
-  if (estoque > 0) {
-    return `Estoque ${estoque}`;
+  if (!cliente) {
+    limparCamposClientePublico();
+    return;
   }
 
-  return "Disponivel";
+  preencherCamposClientePublico(cliente);
+  publicState.ultimoClienteCriadoId = cliente.id;
 }
 
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
+function abrirModalPedidoPublico(resumo) {
+  if (!publicDom.modalPedido) {
+    return;
+  }
+
+  publicDom.modalPedidoTexto.textContent = "Pedido enviado";
+  publicDom.modalPedidoResumo.innerHTML = `
+    <strong>${resumo.cliente}</strong>
+    <ul class="summary-list">
+      <li>${resumo.itens} item(ns)</li>
+      <li>${resumo.total}</li>
+    </ul>
+  `;
+
+  publicDom.modalPedido.classList.add("is-open");
+  publicDom.modalPedido.setAttribute("aria-hidden", "false");
+}
+
+function fecharModalPedidoPublico() {
+  if (!publicDom.modalPedido) {
+    return;
+  }
+
+  publicDom.modalPedido.classList.remove("is-open");
+  publicDom.modalPedido.setAttribute("aria-hidden", "true");
+}
+
+async function finalizarPedidoPublico() {
+  const carrinho = lerCarrinho();
+  const clienteId =
+    Number(publicDom.clienteSelect?.value) || Number(publicState.ultimoClienteCriadoId);
+
+  if (!carrinho.length) {
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, "Carrinho vazio", true);
+    return;
+  }
+
+  if (!clienteId) {
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, "Selecione um cliente", true);
+    return;
+  }
+
+  const payload = {
+    cliente_id: clienteId,
+    status_id: 1,
+    itens: carrinho.map((item) => ({
+      bebida_id: item.id,
+      quantidade: item.quantidade,
+    })),
+  };
+
+  const clienteSelecionado = publicState.clientes.find(
+    (cliente) => Number(cliente.id) === Number(clienteId)
+  );
+
+  try {
+    publicDom.botaoFinalizar.disabled = true;
+    publicDom.botaoFinalizar.innerHTML =
+      '<span class="checkout-loading" aria-hidden="true"></span> Enviando';
+    const pedidoCriado = await api.criarPedido(payload);
+    const pedidoFinal = pedidoCriado?.data || pedidoCriado || {};
+
+    abrirModalPedidoPublico({
+      cliente: obterNomeClientePublico(clienteSelecionado) || "Cliente",
+      itens: contarItensCarrinhoPublico(carrinho),
+      total: formatarMoeda(calcularTotalPublico(carrinho)),
+    });
+    limparCarrinho({ source: "cliente", action: "clear" });
+    renderizarCarrinhoPublico();
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, "Pedido enviado");
+  } catch (error) {
+    mostrarFeedbackPublico(publicDom.feedbackCarrinho, error.message, true);
+  } finally {
+    publicDom.botaoFinalizar.disabled = false;
+    publicDom.botaoFinalizar.textContent = "Finalizar pedido";
+  }
+}
+
+function inicializarModalPublico() {
+  if (!publicDom.modalPedido) {
+    return;
+  }
+
+  document.querySelectorAll("[data-modal-close]").forEach((botao) => {
+    botao.addEventListener("click", fecharModalPedidoPublico);
+  });
+
+  publicDom.modalPedido.addEventListener("click", (event) => {
+    if (event.target === publicDom.modalPedido) {
+      fecharModalPedidoPublico();
+    }
   });
 }
 
-function resolveImage(product) {
-  if (product.imagem) {
-    return product.imagem;
-  }
+function inicializarEventosPublicos() {
+  inicializarTemaPublico();
+  atualizarBadgeCarrinhoPublico();
+  renderizarCarrinhoPublico();
+  inicializarModalPublico();
+  carregarProdutosPublicos();
+  carregarClientesPublico();
 
-  const label = encodeURIComponent(product.nome || "Drink Go");
-  const category = encodeURIComponent(sanitizeCategory(product.categoria));
+  document.querySelectorAll("[data-theme-toggle]").forEach((botao) => {
+    botao.addEventListener("click", alternarTemaPublico);
+  });
 
-  return `data:image/svg+xml;charset=UTF-8,
-  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 420'>
-    <defs>
-      <linearGradient id='bg' x1='0' x2='1' y1='0' y2='1'>
-        <stop offset='0%' stop-color='%23ff8a50'/>
-        <stop offset='100%' stop-color='%2319a56f'/>
-      </linearGradient>
-    </defs>
-    <rect width='640' height='420' fill='url(%23bg)'/>
-    <circle cx='500' cy='94' r='82' fill='rgba(255,255,255,0.16)'/>
-    <circle cx='144' cy='336' r='112' fill='rgba(255,255,255,0.14)'/>
-    <rect x='188' y='96' width='128' height='182' rx='36' fill='rgba(255,255,255,0.84)'/>
-    <rect x='226' y='58' width='52' height='54' rx='18' fill='rgba(255,255,255,0.84)'/>
-    <rect x='208' y='154' width='88' height='74' rx='22' fill='rgba(255,107,44,0.28)'/>
-    <text x='48' y='340' fill='white' font-family='Arial, sans-serif' font-size='40' font-weight='700'>${label}</text>
-    <text x='48' y='382' fill='rgba(255,255,255,0.9)' font-family='Arial, sans-serif' font-size='22'>${category}</text>
-  </svg>`.replace(/\s+/g, " ");
+  publicDom.formCliente?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await salvarClientePublico();
+  });
+
+  publicDom.clienteSelect?.addEventListener("change", selecionarClientePublico);
+  publicDom.botaoFinalizar?.addEventListener("click", finalizarPedidoPublico);
+
+  [publicDom.inputClienteNome, publicDom.inputClienteTelefone, publicDom.inputClienteEndereco].forEach((campo) => {
+    campo?.addEventListener("input", () => campo.classList.remove("field-error"));
+  });
+
+  window.addEventListener("cart:updated", (event) => {
+    const itens = event.detail?.itens || lerCarrinho();
+    atualizarBadgeCarrinhoPublico(itens);
+    renderizarCarrinhoPublico();
+    if (event.detail?.action === "add") {
+      vibrarCarrinhoPublico();
+    }
+  });
+
+  window.addEventListener("clientes:updated", () => {
+    carregarClientesPublico(publicDom.clienteSelect?.value || "");
+  });
 }
+
+inicializarEventosPublicos();
